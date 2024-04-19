@@ -2,11 +2,15 @@ package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.base.SwerveBaseIO;
@@ -23,10 +27,13 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.ReplanningConfig;
 
+import java.util.function.Function;
+
 public class Swerve extends SubsystemBase implements LoggableInputs {
     private SwerveBaseIO base;
     private Rotation2d targetAngle;
     private PIDController anglePID;
+    private Field2d field;
     public Swerve() {
         base = RobotBase.isReal() ? new SwerveBaseReal() : new SwerveBaseSim();
         targetAngle = new Rotation2d();
@@ -43,11 +50,14 @@ public class Swerve extends SubsystemBase implements LoggableInputs {
             () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red, 
             this
         );
+        field = new Field2d();
+        SmartDashboard.putData(field);
     }
 
     @Override
     public void periodic() {
         base.periodic();
+        field.setRobotPose(base.getPose());
     }
 
     @Override
@@ -59,57 +69,71 @@ public class Swerve extends SubsystemBase implements LoggableInputs {
     @Override
     public void fromLog(LogTable table) {}
 
-    public Command angleCentric(CommandXboxController xbox) {
+    public Command fieldCentric(CommandXboxController xbox, Function<ChassisSpeeds, ChassisSpeeds> conversion) {
         return run(() -> {
-            double coefficient = Math.max(1-xbox.getLeftTriggerAxis(), MIN_COEFFICIENT);
-            double allianceCoefficient = 
-                DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue ?
-                1 : -1;
-            double forward = coefficient * -xbox.getLeftY() * MAX_FORWARD_SPEED;
-            double sideways = coefficient * -xbox.getLeftX() * MAX_SIDEWAYS_SPEED;
-            forward *= allianceCoefficient;
-            sideways *= allianceCoefficient;
-            double angleCoefficient = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red ? 1 : -1;
-                if (Math.abs(xbox.getRightY()) > 0.5)
-                    targetAngle = Rotation2d.fromDegrees(90 + angleCoefficient * 90 * Math.signum(-xbox.getRightY()));
-            else if (xbox.getHID().getRightStickButton()) 
-                targetAngle = Rotation2d.fromDegrees(-90);
-            else if (xbox.getHID().getLeftBumper())
-                targetAngle = Rotation2d.fromDegrees(90);
-            else if (xbox.getHID().getYButton()) {
-                if (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue)
-                    targetAngle = Rotation2d.fromDegrees(-60);
-                else
-                    targetAngle = Rotation2d.fromDegrees(-120);
+            double speedCoefficient = Math.max(1 - xbox.getLeftTriggerAxis(), MIN_COEFFICIENT);
+            Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+            double forward = 0;
+            double sideways = 0;
+            if (alliance == Alliance.Blue) {
+                forward = speedCoefficient * -xbox.getLeftY() * MAX_FORWARD_SPEED;
+                sideways = speedCoefficient * -xbox.getLeftX() * MAX_SIDEWAYS_SPEED;
+            } else {
+                forward = speedCoefficient * xbox.getLeftY() * MAX_FORWARD_SPEED;
+                sideways = speedCoefficient * xbox.getLeftX() * MAX_SIDEWAYS_SPEED;
             }
-            else if (xbox.getHID().getXButton()) {
-                if (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue)
-                    targetAngle = Rotation2d.fromDegrees(120);
-                else
-                    targetAngle = Rotation2d.fromDegrees(60);
-            }
-            else if (xbox.getHID().getBackButton()) {
-                if (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue)
-                    targetAngle = Rotation2d.fromDegrees(60);
-                else
-                    targetAngle = Rotation2d.fromDegrees(120);
-            }
-            else 
-                targetAngle = Rotation2d.fromDegrees(
-                    targetAngle.getDegrees() -
-                    xbox.getRightX() * coefficient * MAX_ROTATIONAL_SPEED
+            double rotational = Math.toRadians(10 * speedCoefficient * -xbox.getRightX() * MAX_ROTATIONAL_SPEED);
+            ChassisSpeeds original = new ChassisSpeeds(forward, sideways, rotational);
+            base.setSpeeds(ChassisSpeeds.fromFieldRelativeSpeeds(
+                conversion.apply(original), 
+                base.getPose().getRotation()
+            ));
+        });
+    }
+
+    public Command fieldCentric(CommandXboxController xbox) {
+        return fieldCentric(xbox, speeds -> speeds);
+    }
+
+    public Command angleCentric(CommandXboxController xbox) {
+        return fieldCentric(
+            xbox, 
+            speeds -> { 
+                targetAngle = calculateTargetAngle(xbox);
+                return new ChassisSpeeds(
+                    speeds.vxMetersPerSecond, 
+                    speeds.vyMetersPerSecond,
+                    calculateRotationalVelocityToTarget(targetAngle)
                 );
-            base.setSpeeds(
-                ChassisSpeeds.fromFieldRelativeSpeeds(
-                    new ChassisSpeeds(
-                        forward,
-                        sideways,
-                        calculateRotationalVelocityToTarget(targetAngle)
-                    ), 
-                    base.getPose().getRotation()
-                )
-            );
         }).beforeStarting(() -> targetAngle = base.getPose().getRotation());
+    }
+
+    public Command speakerCentric(CommandXboxController xbox) {
+        return fieldCentric(xbox, speeds -> {
+            if (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue) {
+                targetAngle = new Translation2d(0, 5.975)
+                    .minus(base.getPose().getTranslation())
+                    .getAngle().plus(Rotation2d.fromDegrees(180));
+            } else {
+                targetAngle = new Translation2d(16, 5.975)
+                    .minus(base.getPose().getTranslation())
+                    .getAngle().plus(Rotation2d.fromDegrees(180));
+            }
+            return new ChassisSpeeds(
+                speeds.vxMetersPerSecond, 
+                speeds.vyMetersPerSecond,
+                calculateRotationalVelocityToTarget(targetAngle)
+            );
+        });
+    }
+
+    public Command resetGyro() {
+        return Commands.runOnce(() -> {
+            targetAngle = DriverStation.getAlliance()
+                .orElse(Alliance.Blue) == Alliance.Blue ? 
+                new Rotation2d() : Rotation2d.fromDegrees(180);
+            base.setAngle(targetAngle);
+        });
     }
 
     private double calculateRotationalVelocityToTarget(Rotation2d targetRotation) {
@@ -122,4 +146,27 @@ public class Swerve extends SubsystemBase implements LoggableInputs {
 		}
 		return rotationalVelocity;
 	}
+
+    private Rotation2d calculateTargetAngle(CommandXboxController xbox) {
+        double allianceCoefficient = 
+                DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue ?
+                1 : -1;
+        if (Math.abs(xbox.getRightY()) > 0.5)
+            return Rotation2d.fromDegrees(90 + allianceCoefficient * 90 * Math.signum(xbox.getRightY()));
+        else if (xbox.getHID().getRightStickButton()) 
+            return Rotation2d.fromDegrees(-90);
+        else if (xbox.getHID().getLeftBumper())
+            return Rotation2d.fromDegrees(90);
+        else if (xbox.getHID().getYButton())
+            return Rotation2d.fromDegrees(-90 + allianceCoefficient * 30);
+        else if (xbox.getHID().getXButton()) 
+            return Rotation2d.fromDegrees(90 + allianceCoefficient * 30);
+        else if (xbox.getHID().getBackButton()) 
+            return Rotation2d.fromDegrees(90 - allianceCoefficient * 30);
+        else 
+            return Rotation2d.fromDegrees(
+                targetAngle.getDegrees() -
+                xbox.getRightX() * Math.max(MIN_COEFFICIENT, 1 - xbox.getLeftTriggerAxis()) * MAX_ROTATIONAL_SPEED
+            );
+    } 
 }

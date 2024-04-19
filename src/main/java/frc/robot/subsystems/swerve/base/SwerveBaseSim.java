@@ -31,6 +31,11 @@ public class SwerveBaseSim extends SwerveBaseIO {
     }
 
     @Override
+    public void setAngle(Rotation2d angle) {
+        currentPose = new Pose2d(currentPose.getTranslation(), angle);
+    }
+
+    @Override
     public ChassisSpeeds getSpeeds() {
         return currentSpeeds;
     }

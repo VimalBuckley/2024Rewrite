@@ -10,11 +10,11 @@ import java.util.TimerTask;
 import org.littletonrobotics.junction.Logger;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.path.PathConstraints;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.subsystems.swerve.Swerve;
 
 public class RobotContainer {
@@ -33,6 +33,9 @@ public class RobotContainer {
 			10,
 			20
 		);
-        xbox.a().whileTrue(AutoBuilder.pathfindToPoseFlipped(new Pose2d(4, 6, new Rotation2d()), new PathConstraints(5, 4, 9.425, 12.5664)));
+        xbox.a().onTrue(swerve.resetGyro());
+        var chooser = AutoBuilder.buildAutoChooser();
+        SmartDashboard.putData(chooser);
+        RobotModeTriggers.autonomous().whileTrue(Commands.deferredProxy(chooser::getSelected));
     }
 }
