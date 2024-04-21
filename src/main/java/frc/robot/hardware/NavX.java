@@ -16,12 +16,7 @@ import frc.robot.utilities.ExtendedMath;
 public class NavX {
 	private AHRS ahrs;
 	private Rotation2d gyroZero;
-
-	public NavX(edu.wpi.first.wpilibj.I2C.Port kmxp) {
-		ahrs = new AHRS(kmxp);
-		gyroZero = new Rotation2d();
-	}
-
+	
 	public NavX(Port kmxp) {
 		ahrs = new AHRS(kmxp);
 		gyroZero = new Rotation2d();

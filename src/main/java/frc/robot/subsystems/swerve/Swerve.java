@@ -46,7 +46,7 @@ public class Swerve extends SubsystemBase implements LoggableInputs {
             base::setPose, 
             base::getSpeeds, 
             base::setSpeeds, 
-            new HolonomicPathFollowerConfig(5, 0.39878808909, new ReplanningConfig(true, true)), 
+            new HolonomicPathFollowerConfig(MAX_MODULE_SPEED, 0.39878808909, new ReplanningConfig(true, true)), 
             () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red, 
             this
         );
@@ -108,25 +108,6 @@ public class Swerve extends SubsystemBase implements LoggableInputs {
         }).beforeStarting(() -> targetAngle = base.getPose().getRotation());
     }
 
-    public Command speakerCentric(CommandXboxController xbox) {
-        return fieldCentric(xbox, speeds -> {
-            if (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue) {
-                targetAngle = new Translation2d(0, 5.975)
-                    .minus(base.getPose().getTranslation())
-                    .getAngle().plus(Rotation2d.fromDegrees(180));
-            } else {
-                targetAngle = new Translation2d(16, 5.975)
-                    .minus(base.getPose().getTranslation())
-                    .getAngle().plus(Rotation2d.fromDegrees(180));
-            }
-            return new ChassisSpeeds(
-                speeds.vxMetersPerSecond, 
-                speeds.vyMetersPerSecond,
-                calculateRotationalVelocityToTarget(targetAngle)
-            );
-        });
-    }
-
     public Command resetGyro() {
         return Commands.runOnce(() -> {
             targetAngle = DriverStation.getAlliance()
@@ -163,6 +144,10 @@ public class Swerve extends SubsystemBase implements LoggableInputs {
             return Rotation2d.fromDegrees(90 + allianceCoefficient * 30);
         else if (xbox.getHID().getBackButton()) 
             return Rotation2d.fromDegrees(90 - allianceCoefficient * 30);
+        else if (xbox.getHID().getBButton())
+            return new Translation2d(8 - allianceCoefficient * 8, 5.975)
+                .minus(base.getPose().getTranslation()).getAngle()
+                .plus(Rotation2d.fromDegrees(180));
         else 
             return Rotation2d.fromDegrees(
                 targetAngle.getDegrees() -

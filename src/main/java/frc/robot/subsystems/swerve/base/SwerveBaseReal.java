@@ -11,22 +11,23 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.SPI.Port;
-import frc.robot.hardware.Limelight;
+import frc.robot.hardware.Limelight2;
 import frc.robot.hardware.NavX;
+import frc.robot.hardware.Limelight2.PoseEstimate;
 import frc.robot.utilities.ExtendedMath;
 
 import static frc.robot.subsystems.swerve.SwerveConstants.*;
 
 public class SwerveBaseReal extends SwerveBaseIO {
     private NavX gyro;
-    private Limelight[] limelights;
+    private Limelight2[] limelights;
     private SwerveModule[] modules;
     private SwerveDriveKinematics kinematics;
     private SwerveDrivePoseEstimator estimator;
     public SwerveBaseReal() {
         gyro = new NavX(Port.kMXP);
-        limelights = new Limelight[] {
-            new Limelight("limelight-hehehe")
+        limelights = new Limelight2[] {
+            new Limelight2("limelight-hehehe", 0)
         };
         modules = new SwerveModule[] {
             new SwerveModule(
@@ -85,11 +86,11 @@ public class SwerveBaseReal extends SwerveBaseIO {
         boolean speedLimit =
             (ExtendedMath.within(getSpeeds(), new ChassisSpeeds(), new ChassisSpeeds(1, 1, 2 * Math.PI)) || 
 			!DriverStation.isAutonomous());
-        for (Limelight camera : limelights) {
-            if (camera.hasValidTargets() && speedLimit && camera.getTargetArea().orElse(100d) > 20) {
-                camera.setRobotRotation(gyro.getOffsetedAngle());
-                estimator.addVisionMeasurement(camera.getRobotPoseToField().orElse(new Pose2d()), Timer.getFPGATimestamp());
-            }
+        for (Limelight2 camera : limelights) {
+            PoseEstimate estimate = camera.getPoseMT2(
+                gyro.getOffsetedAngle(), new Rotation2d(getSpeeds().omegaRadiansPerSecond));
+            if (estimate.exists() && speedLimit && (estimate.tagCount() > 1 || estimate.averageDistance() < 4))
+                estimator.addVisionMeasurement(estimate.pose(), Timer.getFPGATimestamp() - estimate.latencySeconds());
         }
     }
 
