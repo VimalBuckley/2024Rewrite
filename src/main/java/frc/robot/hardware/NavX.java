@@ -67,7 +67,7 @@ public class NavX {
 	/** @param offset The new angle given by {@link frc.robot.hardware.NavX#getOffsetedAngle() 
 	 * getOffsetedAngle()} for the current angle
 	 */
-	public void zeroWithOffset(Rotation2d offset) {
+	public void setAngle(Rotation2d offset) {
 		gyroZero = ExtendedMath.wrapRotation2d(getAngle().minus(offset));
 	}
 }

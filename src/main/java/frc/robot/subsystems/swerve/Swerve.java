@@ -1,6 +1,7 @@
 package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -30,11 +31,17 @@ import com.pathplanner.lib.util.ReplanningConfig;
 import java.util.function.Function;
 
 public class Swerve extends SubsystemBase implements LoggableInputs {
+    private static Swerve instance;
+    public static synchronized Swerve getInstance() {
+        if (instance == null) instance = new Swerve();
+        return instance;
+    }
+    
     private SwerveBaseIO base;
     private Rotation2d targetAngle;
     private PIDController anglePID;
     private Field2d field;
-    public Swerve() {
+    private Swerve() {
         base = RobotBase.isReal() ? new SwerveBaseReal() : new SwerveBaseSim();
         targetAngle = new Rotation2d();
         anglePID = new PIDController(5, 0, 0);
@@ -117,6 +124,10 @@ public class Swerve extends SubsystemBase implements LoggableInputs {
         });
     }
 
+    public SwerveState getState() {
+        return new SwerveState(base.getPose(), base.getSpeeds());
+    }
+
     private double calculateRotationalVelocityToTarget(Rotation2d targetRotation) {
 		double rotationalVelocity = anglePID.calculate(
 			base.getPose().getRotation().getRadians(),
@@ -154,4 +165,6 @@ public class Swerve extends SubsystemBase implements LoggableInputs {
                 xbox.getRightX() * Math.max(MIN_COEFFICIENT, 1 - xbox.getLeftTriggerAxis()) * MAX_ROTATIONAL_SPEED
             );
     } 
+
+    public static record SwerveState(Pose2d pose, ChassisSpeeds speeds) {}
 }

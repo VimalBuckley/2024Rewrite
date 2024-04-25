@@ -1,50 +1,63 @@
 package frc.robot.subsystems.shooter;
 
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
-
-import org.littletonrobotics.junction.LogTable;
 
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
 public class ShooterSim extends Shooter {
     private final TrapezoidProfile profile = new TrapezoidProfile(CONSTRAINTS);
-    @Override
-    public Command aim(Supplier<Pose2d> poseSupplier) {
-        return Commands.run(() -> {
+    private State state = new State();
+    private double shooterVolts = 0;
+    private double loaderVolts = 0;
+    private Supplier<Translation2d> robotTranslation;
 
-        }, this);
+    protected ShooterSim(Supplier<Translation2d> robotTranslation) {
+        this.robotTranslation = robotTranslation;
     }
+
     @Override
-    public Command tilt(double tilt) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'tilt'");
+    public Command aim() {
+        return tilt(() -> TILT_CALCULATOR.get(robotTranslation.get().getDistance(
+            new Translation2d(DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue ? -0.5 : 16.5, 5.9)
+        ))).repeatedly();
+    }
+
+    @Override
+    public Command tilt(DoubleSupplier targetTilt) {
+        return Commands.run(
+            () -> {
+                state = profile.calculate(
+                    0.02, 
+                    state, 
+                    new State(targetTilt.getAsDouble(), 0)
+                );
+            }, this
+        ).until(
+            () -> Math.abs(targetTilt.getAsDouble() - state.position) < TILT_TOLERANCE
+        );
     }
 
     @Override
     public Command fire(double voltage) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'fire'");
+        return Commands.runOnce(() -> shooterVolts = voltage);
     }
 
     @Override
     public Command load(double voltage) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'load'");
-    }
-    
-    @Override
-    public void toLog(LogTable table) {
-        // TODO Auto-generated method stub
-        
+        return Commands.runOnce(() -> loaderVolts = voltage);
     }
 
     @Override
-    public void fromLog(LogTable table) {}
-
-    
+    public ShooterState getState() {
+        return new ShooterState(state.position, shooterVolts, loaderVolts);
+    }
 }

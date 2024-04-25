@@ -39,7 +39,13 @@
   "NetworkTables Info": {
     "Clients": {
       "open": true
-    }
+    },
+    "Server": {
+      "Subscribers": {
+        "open": true
+      }
+    },
+    "visible": true
   },
   "NetworkTables View": {
     "visible": false

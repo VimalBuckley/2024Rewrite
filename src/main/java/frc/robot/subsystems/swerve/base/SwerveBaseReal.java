@@ -77,7 +77,7 @@ public class SwerveBaseReal extends SwerveBaseIO {
 
     @Override
     public void setAngle(Rotation2d angle) {
-        gyro.zeroWithOffset(angle);
+        gyro.setAngle(angle);
     }
 
     @Override
