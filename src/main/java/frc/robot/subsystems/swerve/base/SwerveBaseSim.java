@@ -1,5 +1,6 @@
 package frc.robot.subsystems.swerve.base;
 
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -9,10 +10,18 @@ import static frc.robot.subsystems.swerve.SwerveConstants.*;
 public class SwerveBaseSim extends SwerveBaseIO {
     private Pose2d currentPose;
     private ChassisSpeeds currentSpeeds;
+    private ChassisSpeeds targetSpeeds;
     private SwerveDriveKinematics kinematics;
+    private SlewRateLimiter forwardLimiter;
+    private SlewRateLimiter sidewaysLimiter;
+    private SlewRateLimiter rotationalLimiter;
     public SwerveBaseSim() {
         currentPose = new Pose2d();
         currentSpeeds = new ChassisSpeeds();
+        targetSpeeds = new ChassisSpeeds();
+        forwardLimiter = new SlewRateLimiter(10);
+        sidewaysLimiter = new SlewRateLimiter(10);
+        rotationalLimiter = new SlewRateLimiter(60);
         kinematics = new SwerveDriveKinematics(
             FRONT_LEFT_MODULE_CONFIG.translation(),
             FRONT_RIGHT_MODULE_CONFIG.translation(),
@@ -22,7 +31,7 @@ public class SwerveBaseSim extends SwerveBaseIO {
     }
     @Override
     public void setSpeeds(ChassisSpeeds speeds) {
-        currentSpeeds = speeds;
+        targetSpeeds = speeds;
     }
 
     @Override
@@ -52,6 +61,9 @@ public class SwerveBaseSim extends SwerveBaseIO {
 
     @Override
     public void periodic() {
+        currentSpeeds.vxMetersPerSecond = forwardLimiter.calculate(targetSpeeds.vxMetersPerSecond);
+        currentSpeeds.vyMetersPerSecond = sidewaysLimiter.calculate(targetSpeeds.vyMetersPerSecond);
+        currentSpeeds.omegaRadiansPerSecond = rotationalLimiter.calculate(targetSpeeds.omegaRadiansPerSecond);
         var fieldRelative = ChassisSpeeds.fromRobotRelativeSpeeds(currentSpeeds, currentPose.getRotation());
         currentPose = new Pose2d(
             currentPose.getX() + fieldRelative.vxMetersPerSecond * 0.02,
