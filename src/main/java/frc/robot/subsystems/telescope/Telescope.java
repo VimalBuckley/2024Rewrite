@@ -29,7 +29,14 @@ public abstract class Telescope extends SubsystemBase implements LoggableInputs 
     public abstract Command extend(double extension);
     public abstract TelescopeState getState();
 
-    public void toLog(LogTable table) {}
+    @Override
+    public void periodic() {
+        mech.setLength(0.4064 + getState().extension());
+    }
+
+    public void toLog(LogTable table) {
+        table.put("Extension", getState().extension());
+    }
 
     public void fromLog(LogTable table) {}
 

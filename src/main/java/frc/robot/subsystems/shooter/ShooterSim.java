@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
@@ -18,32 +17,48 @@ public class ShooterSim extends Shooter {
     private State state = new State();
     private double shooterVolts = 0;
     private double loaderVolts = 0;
-    private Supplier<Translation2d> robotTranslation;
+    private Supplier<Double> shootingAngle;
 
     protected ShooterSim(Supplier<Translation2d> robotTranslation) {
-        this.robotTranslation = robotTranslation;
+        Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+        shootingAngle = () -> TILT_CALCULATOR.get(
+            robotTranslation.get().getDistance(
+                new Translation2d(alliance == Alliance.Blue ? -0.5 : 16.5, 5.9)
+            )
+        );
     }
 
     @Override
     public Command aim() {
-        return tilt(() -> TILT_CALCULATOR.get(robotTranslation.get().getDistance(
-            new Translation2d(DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue ? -0.5 : 16.5, 5.9)
-        ))).repeatedly();
+        State targetState = new State();
+        return Commands.run(
+            () -> {
+                targetState.position = shootingAngle.get();
+                state = profile.calculate(
+                    0.02, 
+                    state, 
+                    targetState
+                );
+            }, this
+        ).until(
+            () -> Math.abs(shootingAngle.get() - state.position) < TILT_TOLERANCE
+        ).finallyDo(() -> state.velocity = 0);
     }
 
     @Override
-    public Command tilt(DoubleSupplier targetTilt) {
+    public Command tilt(double targetTilt) {
+        State targetState = new State(targetTilt, 0);
         return Commands.run(
             () -> {
                 state = profile.calculate(
                     0.02, 
                     state, 
-                    new State(targetTilt.getAsDouble(), 0)
+                    targetState
                 );
             }, this
         ).until(
-            () -> Math.abs(targetTilt.getAsDouble() - state.position) < TILT_TOLERANCE
-        );
+            () -> Math.abs(targetTilt - state.position) < TILT_TOLERANCE
+        ).finallyDo(() -> state.velocity = 0);
     }
 
     @Override

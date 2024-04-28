@@ -21,7 +21,6 @@ import frc.robot.subsystems.swerve.base.SwerveBaseSim;
 import static frc.robot.subsystems.swerve.SwerveConstants.*;
 
 import org.littletonrobotics.junction.LogTable;
-import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -70,7 +69,8 @@ public class Swerve extends SubsystemBase implements LoggableInputs {
     @Override
     public void toLog(LogTable table) {
         table.put("Target Angle", targetAngle.getDegrees());
-        Logger.recordOutput("Pose", base.getPose());
+        table.put("Speeds", base.getSpeeds());
+        table.put("Pose", base.getPose());
     }
 
     @Override
