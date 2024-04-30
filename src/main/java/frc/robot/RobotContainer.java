@@ -21,16 +21,21 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeConstants;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.swerve.Swerve;
 import frc.robot.subsystems.swerve.SwerveConstants;
 import frc.robot.subsystems.telescope.Telescope;
+import frc.robot.subsystems.telescope.TelescopeConstants;
 
 public class RobotContainer {
     private final Mechanism2d robotMech = new Mechanism2d(1.372, 1.2192);
     private final Swerve swerve = Swerve.getInstance();
     private final Shooter shooter = Shooter.getInstance(() -> swerve.getState().pose().getTranslation());
     private final Telescope telescope = Telescope.getInstance();
+    private final Intake intake = Intake.getInstance();
     private final CommandXboxController xbox = new CommandXboxController(2);
     private final CommandJoystick stick = new CommandJoystick(1);
     public RobotContainer() {
@@ -41,6 +46,7 @@ public class RobotContainer {
     }
 
     private void setupMechanism2d() {
+        robotMech.getRoot("Intake Root", 0.972, 0.1).append(intake.mech);
         robotMech.getRoot("Telescope Root", 0.483, 0.1524).append(telescope.mech);
         telescope.mech.append(shooter.mech);
     }
@@ -50,6 +56,10 @@ public class RobotContainer {
         xbox.a().onTrue(swerve.resetGyro());
         xbox.rightTrigger().whileTrue(AutoBuilder.pathfindToPoseFlipped(
             new Pose2d(1.8, 7.8, Rotation2d.fromDegrees(-90)), SwerveConstants.TELEOP_CONSTRAINTS));
+        xbox.povUp().onTrue(startIntaking()).onFalse(stow());
+        xbox.povDown().onTrue(variableShot());
+        xbox.leftStick().onTrue(stow());
+        xbox.povRight().onTrue(readyAmp());
 
         stick.button(1); //shoot
         stick.button(2); //intake
@@ -72,6 +82,7 @@ public class RobotContainer {
 					Logger.processInputs("Swerve", swerve);
                     Logger.processInputs("Shooter", shooter);
                     Logger.processInputs("Telescope", telescope);
+                    Logger.processInputs("Intake", intake);
                     Logger.recordOutput("State", robotMech);
 				}
 			},
@@ -87,15 +98,31 @@ public class RobotContainer {
     }
 
     private Command stow() {
-        return shooter.fire(0)
-            .andThen(shooter.load(0))
-            .andThen(shooter.tilt(11.5))
-            .alongWith(telescope.extend(0));
+        return shooter.fire(ShooterConstants.REST_VOLTAGE)
+            .andThen(shooter.load(ShooterConstants.LOADER_REST_VOLTAGE))
+            .andThen(intake.spin(IntakeConstants.REST_VOLTAGE))
+            .andThen(shooter.tilt(ShooterConstants.STOW_TILT))
+            .alongWith(telescope.extend(TelescopeConstants.STOW_EXTENSION))
+            .alongWith(intake.tilt(IntakeConstants.STOW_TILT));
     }
 
     private Command variableShot() {
-        return shooter.fire(12)
+        return shooter.fire(ShooterConstants.SHOT_VOLTAGE)
             .andThen(shooter.aim())
-            .alongWith(telescope.extend(0.5));
+            .alongWith(telescope.extend(TelescopeConstants.SPEAKER_EXTENSION));
+    }
+
+    private Command startIntaking() {
+        return shooter.tilt(ShooterConstants.STOW_TILT)
+            .alongWith(telescope.extend(TelescopeConstants.STOW_EXTENSION))
+            .andThen(intake.spin(IntakeConstants.INTAKE_VOLTAGE))
+            .andThen(intake.tilt(IntakeConstants.GROUND_TILT));
+    }
+
+    private Command readyAmp() {
+        return shooter.load(ShooterConstants.LOADER_REST_VOLTAGE)
+            .andThen(shooter.fire(ShooterConstants.AMP_VOLTAGE))
+            .andThen(telescope.extend(TelescopeConstants.AMP_EXTENSION))
+            .alongWith(shooter.tilt(ShooterConstants.AMP_TILT));
     }
 }

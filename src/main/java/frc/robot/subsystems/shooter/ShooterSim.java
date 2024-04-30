@@ -40,9 +40,7 @@ public class ShooterSim extends Shooter {
                     targetState
                 );
             }, this
-        ).until(
-            () -> Math.abs(shootingAngle.get() - state.position) < TILT_TOLERANCE
-        ).finallyDo(() -> state.velocity = 0);
+        );
     }
 
     @Override
