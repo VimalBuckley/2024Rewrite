@@ -21,21 +21,21 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeConstants;
-import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
 import frc.robot.subsystems.shooter.ShooterConstants;
-import frc.robot.subsystems.swerve.Swerve;
+import frc.robot.subsystems.swerve.SwerveIO;
 import frc.robot.subsystems.swerve.SwerveConstants;
-import frc.robot.subsystems.telescope.Telescope;
+import frc.robot.subsystems.telescope.TelescopeIO;
 import frc.robot.subsystems.telescope.TelescopeConstants;
 
 public class RobotContainer {
     private final Mechanism2d robotMech = new Mechanism2d(1.372, 1.2192);
-    private final Swerve swerve = Swerve.getInstance();
-    private final Shooter shooter = Shooter.getInstance(() -> swerve.getState().pose().getTranslation());
-    private final Telescope telescope = Telescope.getInstance();
-    private final Intake intake = Intake.getInstance();
+    private final SwerveIO swerve = SwerveIO.getInstance();
+    private final ShooterIO shooter = ShooterIO.getInstance(() -> swerve.getState().pose().getTranslation());
+    private final TelescopeIO telescope = TelescopeIO.getInstance();
+    private final IntakeIO intake = IntakeIO.getInstance();
     private final CommandXboxController xbox = new CommandXboxController(2);
     private final CommandJoystick stick = new CommandJoystick(1);
     public RobotContainer() {

@@ -5,6 +5,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 
 import static frc.robot.subsystems.swerve.SwerveConstants.*;
 public class SwerveBaseSim extends SwerveBaseIO {
@@ -55,8 +56,8 @@ public class SwerveBaseSim extends SwerveBaseIO {
     }
 
     @Override
-    public SwerveDriveKinematics getKinematics() {
-        return kinematics;
+    public SwerveModuleState[] getStates() {
+        return kinematics.toSwerveModuleStates(getSpeeds());
     }
 
     @Override

@@ -11,9 +11,9 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
-public abstract class Shooter extends SubsystemBase implements LoggableInputs {
-    private static Shooter instance;
-    public static synchronized Shooter getInstance(Supplier<Translation2d> pose) {
+public abstract class ShooterIO extends SubsystemBase implements LoggableInputs {
+    private static ShooterIO instance;
+    public static synchronized ShooterIO getInstance(Supplier<Translation2d> pose) {
         if (instance == null) {
             if (RobotBase.isReal()) {
                 instance = null;
@@ -25,7 +25,7 @@ public abstract class Shooter extends SubsystemBase implements LoggableInputs {
     }
 
     public final MechanismLigament2d mech;
-    public Shooter() {
+    public ShooterIO() {
         mech = new MechanismLigament2d("Shooter", 0.3, -38);
     }
 
@@ -44,6 +44,7 @@ public abstract class Shooter extends SubsystemBase implements LoggableInputs {
         table.put("Shooter Voltage", getState().shooterVoltage());
         table.put("Loader Voltage", getState().loaderVoltage());
     }
+    
     public void fromLog(LogTable table) {}
 
     public static record ShooterState(double shooterTilt, double shooterVoltage, double loaderVoltage) {}

@@ -7,7 +7,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 
-public class IntakeSim extends Intake {
+public class IntakeSim extends IntakeIO {
     private State currentState;
     private double currentVoltage;
     private TrapezoidProfile profile;

@@ -8,9 +8,9 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public abstract class Telescope extends SubsystemBase implements LoggableInputs {
-    private static Telescope instance;
-    public static synchronized Telescope getInstance() {
+public abstract class TelescopeIO extends SubsystemBase implements LoggableInputs {
+    private static TelescopeIO instance;
+    public static synchronized TelescopeIO getInstance() {
         if (instance == null) {
             if (RobotBase.isReal()) {
                 instance = null;
@@ -22,7 +22,7 @@ public abstract class Telescope extends SubsystemBase implements LoggableInputs 
     }
 
     public final MechanismLigament2d mech;
-    public Telescope() {
+    public TelescopeIO() {
         mech = new MechanismLigament2d("Telescope", 0.4064, 105);
     }
 

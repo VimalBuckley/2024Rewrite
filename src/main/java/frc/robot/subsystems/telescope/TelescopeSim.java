@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 
 import static frc.robot.subsystems.telescope.TelescopeConstants.*;
 
-public class TelescopeSim extends Telescope {
+public class TelescopeSim extends TelescopeIO {
     private State state = new State();
     private TrapezoidProfile profile = new TrapezoidProfile(CONSTRAINTS);
 

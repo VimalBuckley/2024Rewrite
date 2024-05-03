@@ -8,9 +8,9 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public abstract class Intake extends SubsystemBase implements LoggableInputs {
-    private static Intake instance;
-    public static synchronized Intake getInstance() {
+public abstract class IntakeIO extends SubsystemBase implements LoggableInputs {
+    private static IntakeIO instance;
+    public static synchronized IntakeIO getInstance() {
         if (instance == null) {
             if (RobotBase.isReal()) {
                 instance = null;
@@ -22,7 +22,7 @@ public abstract class Intake extends SubsystemBase implements LoggableInputs {
     }
 
     public final MechanismLigament2d mech;
-    public Intake() {
+    public IntakeIO() {
         mech = new MechanismLigament2d("Intake", 0.3, 45);
     }
 

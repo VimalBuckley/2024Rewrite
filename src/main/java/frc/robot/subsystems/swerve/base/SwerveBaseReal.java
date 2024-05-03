@@ -96,7 +96,7 @@ public class SwerveBaseReal extends SwerveBaseIO {
 
     @Override
     public ChassisSpeeds getSpeeds() {
-        return kinematics.toChassisSpeeds(getModuleStates());
+        return kinematics.toChassisSpeeds(getStates());
     }
 
     @Override
@@ -105,9 +105,13 @@ public class SwerveBaseReal extends SwerveBaseIO {
     }
 
     @Override
-    public SwerveDriveKinematics getKinematics() {
-        return kinematics;
-    }
+	public SwerveModuleState[] getStates() {
+		SwerveModuleState[] states = new SwerveModuleState[modules.length];
+		for (int i = 0; i < modules.length; i++) {
+			states[i] = modules[i].getState();
+		}
+		return states;
+	}
 
     private Translation2d[] getModuleTranslations() {
 		Translation2d[] translations = new Translation2d[modules.length];
@@ -115,14 +119,6 @@ public class SwerveBaseReal extends SwerveBaseIO {
 			translations[i] = modules[i].getTranslationFromCenter();
 		}
 		return translations;
-	}
-
-	private SwerveModuleState[] getModuleStates() {
-		SwerveModuleState[] states = new SwerveModuleState[modules.length];
-		for (int i = 0; i < modules.length; i++) {
-			states[i] = modules[i].getState();
-		}
-		return states;
 	}
 
 	private SwerveModulePosition[] getModulePositions() {

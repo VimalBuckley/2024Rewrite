@@ -29,10 +29,10 @@ import com.pathplanner.lib.util.ReplanningConfig;
 
 import java.util.function.Function;
 
-public class Swerve extends SubsystemBase implements LoggableInputs {
-    private static Swerve instance;
-    public static synchronized Swerve getInstance() {
-        if (instance == null) instance = new Swerve();
+public class SwerveIO extends SubsystemBase implements LoggableInputs {
+    private static SwerveIO instance;
+    public static synchronized SwerveIO getInstance() {
+        if (instance == null) instance = new SwerveIO();
         return instance;
     }
     
@@ -40,7 +40,7 @@ public class Swerve extends SubsystemBase implements LoggableInputs {
     private Rotation2d targetAngle;
     private PIDController anglePID;
     private Field2d field;
-    private Swerve() {
+    private SwerveIO() {
         base = RobotBase.isReal() ? new SwerveBaseReal() : new SwerveBaseSim();
         targetAngle = new Rotation2d();
         anglePID = new PIDController(5, 0, 0);
@@ -71,6 +71,7 @@ public class Swerve extends SubsystemBase implements LoggableInputs {
         table.put("Target Angle", targetAngle.getDegrees());
         table.put("Speeds", base.getSpeeds());
         table.put("Pose", base.getPose());
+        table.put("Module States", base.getStates());
     }
 
     @Override

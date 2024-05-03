@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 
 import static frc.robot.subsystems.shooter.ShooterConstants.*;
 
-public class ShooterSim extends Shooter {
+public class ShooterSim extends ShooterIO {
     private final TrapezoidProfile profile = new TrapezoidProfile(CONSTRAINTS);
     private State state = new State();
     private double shooterVolts = 0;
