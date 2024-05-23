@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -17,6 +16,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.swerve.base.SwerveBaseIO;
 import frc.robot.subsystems.swerve.base.SwerveBaseReal;
 import frc.robot.subsystems.swerve.base.SwerveBaseSim;
+import frc.robot.utilities.EZLogger.LogAccess;
+import frc.robot.utilities.EZLogger.Loggable;
 
 import static frc.robot.subsystems.swerve.SwerveConstants.*;
 
@@ -29,7 +30,7 @@ import com.pathplanner.lib.util.ReplanningConfig;
 
 import java.util.function.Function;
 
-public class SwerveIO extends SubsystemBase implements LoggableInputs {
+public class SwerveIO extends SubsystemBase implements LoggableInputs, Loggable {
     private static SwerveIO instance;
     public static synchronized SwerveIO getInstance() {
         if (instance == null) instance = new SwerveIO();
@@ -57,7 +58,6 @@ public class SwerveIO extends SubsystemBase implements LoggableInputs {
             this
         );
         field = new Field2d();
-        SmartDashboard.putData(field);
     }
 
     @Override
@@ -68,10 +68,19 @@ public class SwerveIO extends SubsystemBase implements LoggableInputs {
 
     @Override
     public void toLog(LogTable table) {
-        table.put("Target Angle", targetAngle.getDegrees());
+        table.put("Target Angle", targetAngle);
         table.put("Speeds", base.getSpeeds());
         table.put("Pose", base.getPose());
         table.put("Module States", base.getStates());
+    }
+
+    @Override
+    public void log(LogAccess table) {
+        table.put("Target Angle", targetAngle);
+        table.put("Speeds", base.getSpeeds());
+        table.put("Pose", base.getPose());
+        table.put("Module States", base.getStates());
+        table.put("Field", field);
     }
 
     @Override

@@ -14,11 +14,12 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.utilities.EZLogger;
 
 public class Robot extends LoggedRobot {
     @Override
     public void robotInit() {
-        initLogging();
+        // initLogging();
         new RobotContainer();
         DriverStation.silenceJoystickConnectionWarning(true);
     }
@@ -26,6 +27,7 @@ public class Robot extends LoggedRobot {
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
+        EZLogger.periodic();
     }
 
     private void initLogging() {

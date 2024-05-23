@@ -7,8 +7,10 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.utilities.EZLogger.LogAccess;
+import frc.robot.utilities.EZLogger.Loggable;
 
-public abstract class TelescopeIO extends SubsystemBase implements LoggableInputs {
+public abstract class TelescopeIO extends SubsystemBase implements LoggableInputs, Loggable {
     private static TelescopeIO instance;
     public static synchronized TelescopeIO getInstance() {
         if (instance == null) {
@@ -35,6 +37,10 @@ public abstract class TelescopeIO extends SubsystemBase implements LoggableInput
     }
 
     public void toLog(LogTable table) {
+        table.put("Extension", getState().extension());
+    }
+
+    public void log(LogAccess table) {
         table.put("Extension", getState().extension());
     }
 

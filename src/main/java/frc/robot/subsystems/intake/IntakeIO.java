@@ -7,8 +7,10 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.utilities.EZLogger.LogAccess;
+import frc.robot.utilities.EZLogger.Loggable;
 
-public abstract class IntakeIO extends SubsystemBase implements LoggableInputs {
+public abstract class IntakeIO extends SubsystemBase implements LoggableInputs, Loggable {
     private static IntakeIO instance;
     public static synchronized IntakeIO getInstance() {
         if (instance == null) {
@@ -37,6 +39,12 @@ public abstract class IntakeIO extends SubsystemBase implements LoggableInputs {
 
     @Override
     public void toLog(LogTable table) {
+        table.put("Tilt", getState().tilt());
+        table.put("Voltage", getState().voltage());
+    }
+
+    @Override
+    public void log(LogAccess table) {
         table.put("Tilt", getState().tilt());
         table.put("Voltage", getState().voltage());
     }

@@ -4,18 +4,12 @@
 
 package frc.robot;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
-import org.littletonrobotics.junction.Logger;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
@@ -28,6 +22,9 @@ import frc.robot.subsystems.shooter.ShooterConstants;
 import frc.robot.subsystems.swerve.SwerveIO;
 import frc.robot.subsystems.swerve.SwerveConstants;
 import frc.robot.subsystems.telescope.TelescopeIO;
+import frc.robot.utilities.CommandKeyboard;
+import frc.robot.utilities.EZLogger;
+import frc.robot.utilities.EZLogger.Loggable;
 import frc.robot.subsystems.telescope.TelescopeConstants;
 
 public class RobotContainer {
@@ -38,6 +35,7 @@ public class RobotContainer {
     private final IntakeIO intake = IntakeIO.getInstance();
     private final CommandXboxController xbox = new CommandXboxController(2);
     private final CommandJoystick stick = new CommandJoystick(1);
+    private final SendableChooser<Command> chooser = AutoBuilder.buildAutoChooser();
     public RobotContainer() {
         setupMechanism2d();
         setupLogging();
@@ -49,6 +47,15 @@ public class RobotContainer {
         robotMech.getRoot("Intake Root", 0.972, 0.1).append(intake.mech);
         robotMech.getRoot("Telescope Root", 0.483, 0.1524).append(telescope.mech);
         telescope.mech.append(shooter.mech);
+        // Rotation2d testRotation = Rotation2d.fromDegrees(180);
+
+        // StructBuffer<Rotation2d> testBuffer = StructBuffer.create(new Rotation2dStruct());
+        // ByteBuffer bytes = testBuffer.write(testRotation);
+        // byte[] array = new byte[bytes.position()];
+        // bytes.position(0);
+        // bytes.get(array); 
+        // SmartDashboard.putRaw("Test Rotation", array);
+        // Logger.recordOutput("Test Rotation", Rotation2d.fromDegrees(180));
     }
 
     private void setupBindings() {
@@ -61,10 +68,10 @@ public class RobotContainer {
         xbox.leftStick().onTrue(stow());
         xbox.povRight().onTrue(readyAmp());
 
-        stick.button(1); //shoot
-        stick.button(2); //intake
+        stick.button(1).onTrue(shoot());
+        stick.button(2).onTrue(startIntaking()); //intake
         stick.button(3).onTrue(variableShot()); // variable shot
-        stick.button(5); // amp
+        stick.button(5).onTrue(readyAmp()); // amp
         stick.button(6); // ferry
         stick.button(7); // finish climb
         stick.button(8); // start climb
@@ -73,27 +80,22 @@ public class RobotContainer {
         stick.povRight(); // ready subwoofer
         stick.button(11); // eject
         stick.button(12); // backout
+
+        CommandKeyboard.getKey("t")
+            .onTrue(Commands.print("t was pressed :)"))
+            .onFalse(Commands.print("t was released :("));
     }
 
     private void setupLogging() {
-        new Timer().schedule(
-			new TimerTask() {
-				public void run() {
-					Logger.processInputs("Swerve", swerve);
-                    Logger.processInputs("Shooter", shooter);
-                    Logger.processInputs("Telescope", telescope);
-                    Logger.processInputs("Intake", intake);
-                    Logger.recordOutput("State", robotMech);
-				}
-			},
-			10,
-			20
-		);
+        EZLogger.put("Swerve", (Loggable) swerve);
+        EZLogger.put("Shooter", (Loggable) shooter);
+        EZLogger.put("Telescope", (Loggable) telescope);
+        EZLogger.put("Intake", (Loggable) intake);
+        EZLogger.put("State", robotMech);
+        EZLogger.put("Auto Chooser", chooser);
     }
 
     private void setupAuto() {
-        SendableChooser<Command> chooser = AutoBuilder.buildAutoChooser();
-        SmartDashboard.putData(chooser);
         RobotModeTriggers.autonomous().whileTrue(Commands.deferredProxy(chooser::getSelected));
     }
 
@@ -104,6 +106,12 @@ public class RobotContainer {
             .andThen(shooter.tilt(ShooterConstants.STOW_TILT))
             .alongWith(telescope.extend(TelescopeConstants.STOW_EXTENSION))
             .alongWith(intake.tilt(IntakeConstants.STOW_TILT));
+    }
+
+    private Command shoot() {
+        return shooter.load(ShooterConstants.LOADER_SHOT_VOLTAGE)
+            .andThen(Commands.waitSeconds(0.9))
+            .andThen(stow());
     }
 
     private Command variableShot() {

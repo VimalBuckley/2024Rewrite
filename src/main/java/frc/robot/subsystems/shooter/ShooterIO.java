@@ -5,13 +5,15 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.utilities.EZLogger.LogAccess;
+import frc.robot.utilities.EZLogger.Loggable;
 
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
-public abstract class ShooterIO extends SubsystemBase implements LoggableInputs {
+public abstract class ShooterIO extends SubsystemBase implements LoggableInputs, Loggable {
     private static ShooterIO instance;
     public static synchronized ShooterIO getInstance(Supplier<Translation2d> pose) {
         if (instance == null) {
@@ -40,6 +42,12 @@ public abstract class ShooterIO extends SubsystemBase implements LoggableInputs 
     }
 
     public void toLog(LogTable table) {
+        table.put("Tilt", getState().shooterTilt());
+        table.put("Shooter Voltage", getState().shooterVoltage());
+        table.put("Loader Voltage", getState().loaderVoltage());
+    }
+
+    public void log(LogAccess table) {
         table.put("Tilt", getState().shooterTilt());
         table.put("Shooter Voltage", getState().shooterVoltage());
         table.put("Loader Voltage", getState().loaderVoltage());
